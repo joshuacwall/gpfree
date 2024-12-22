@@ -5,3 +5,5 @@ langchain-community>=0.0.24
 langsmith
 graphviz>=0.20.1
 qdrant-client
+langgraph>=0.0.10
+tavily-python
