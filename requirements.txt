@@ -7,3 +7,4 @@ graphviz>=0.20.1
 qdrant-client
 langgraph>=0.0.10
 tavily-python
+litellm
