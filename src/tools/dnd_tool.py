@@ -2,23 +2,19 @@ from langchain_community.vectorstores import Qdrant
 from langchain.agents import Tool
 from qdrant_client import QdrantClient
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from config.environment import get_env_variable
 
 def initialize_qdrant():
     # Set up Qdrant with your existing collection
     client = QdrantClient(
-        url=os.getenv('QDRANT_URL'),
-        api_key=os.getenv('QDRANT_API_KEY'),
+        url=get_env_variable('QDRANT_URL'),
+        api_key=get_env_variable('QDRANT_API_KEY'),
     )
 
     # Get the HuggingFace API key
-    huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
+    huggingface_api_key = get_env_variable('HUGGINGFACE_API_KEY')
     if huggingface_api_key is None:
-        raise ValueError("HUGGINGFACE_API_KEY is not set in the environment variables.")
+        raise ValueError("HUGGINGFACE_API_KEY is not set in environment variables or secrets")
 
     # Initialize remote embeddings
     embeddings = HuggingFaceInferenceAPIEmbeddings(

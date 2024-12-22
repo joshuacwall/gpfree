@@ -1,15 +1,12 @@
 import os
 from langchain_community.tools import TavilySearchResults
-from langchain.utilities.tavily_search import TavilySearchAPIWrapper
-
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv()
+from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
+from config.environment import get_env_variable
 
 # Get the Tavily API key
-tavily_api_key = os.getenv('TAVILY_API_KEY')
+tavily_api_key = get_env_variable('TAVILY_API_KEY')
 if tavily_api_key is None:
-    raise ValueError("TAVILY_API_KEY is not set in the environment variables.")
+    raise ValueError("TAVILY_API_KEY is not set in environment variables or secrets")
 
 # Set the Tavily API key in the environment
 os.environ['TAVILY_API_KEY'] = tavily_api_key
