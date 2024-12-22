@@ -144,8 +144,6 @@ def render_agent_creation(tab):
 def render_architecture_diagrams():
     """Render agent architecture diagrams"""
     try:
-        import pygraphviz
-        
         agent_type = st.selectbox(
             "Select Agent Type",
             options=["react", "react_human", "advanced_react", "plain"],
@@ -155,14 +153,13 @@ def render_architecture_diagrams():
         description, graph = get_agent_graph(agent_type)
         st.markdown(f"**{agent_type.title()} Agent**")
         st.markdown(description)
-        st.image(graph.draw_png())
+        st.image(graph.pipe(format='png'))
         
-    except ImportError:
-        st.error("""
-        Missing required dependencies for graph visualization.
-        Please install:
+    except Exception as e:
+        st.error(f"""
+        Error generating diagram: {str(e)}
+        Please make sure you have graphviz installed:
         ```bash
-        pip install pygraphviz
+        pip install graphviz
         ```
-        For system dependencies, see: https://github.com/pygraphviz/pygraphviz/blob/main/INSTALL.txt
         """)
