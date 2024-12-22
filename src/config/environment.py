@@ -2,6 +2,16 @@ import os
 from dotenv import load_dotenv
 import streamlit as st
 
+# Define required variables at module level
+REQUIRED_VARS = [
+    "LANGCHAIN_API_KEY",
+    "LANGCHAIN_TRACING_V2",
+    "TAVILY_API_KEY",
+    "QDRANT_URL",
+    "QDRANT_API_KEY",
+    "HUGGINGFACE_API_KEY"
+]
+
 def get_env_variable(key: str) -> str:
     """Get environment variable from either secrets or .env"""
     # Try getting from Streamlit secrets first
@@ -20,7 +30,7 @@ def get_env_variable(key: str) -> str:
     # Debug output
     st.write(f"Failed to get {key} from both secrets and env vars")
     st.write(f"Available secrets: {list(st.secrets.keys()) if hasattr(st, 'secrets') else 'No secrets'}")
-    st.write(f"Available env vars: {[k for k in os.environ.keys() if k in required_vars]}")
+    st.write(f"Available env vars: {[k for k in os.environ.keys() if k in REQUIRED_VARS]}")
     
     return None
 
@@ -29,16 +39,7 @@ def check_environment():
     # Load .env file for local development
     load_dotenv()
     
-    required_vars = [
-        "LANGCHAIN_API_KEY",
-        "LANGCHAIN_TRACING_V2",
-        "TAVILY_API_KEY",
-        "QDRANT_URL",
-        "QDRANT_API_KEY",
-        "HUGGINGFACE_API_KEY"
-    ]
-    
-    missing_vars = [var for var in required_vars if not get_env_variable(var)]
+    missing_vars = [var for var in REQUIRED_VARS if not get_env_variable(var)]
     
     if missing_vars:
         st.error(f"Missing required environment variables: {', '.join(missing_vars)}")
