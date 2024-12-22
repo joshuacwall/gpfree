@@ -1,0 +1,8 @@
+streamlit>=1.31.0
+python-dotenv>=1.0.0
+langchain>=0.0.15
+langchain-community>=0.0.24
+langsmith
+graphviz>=0.20.1
+pygraphviz>=1.11
+qdrant-client
