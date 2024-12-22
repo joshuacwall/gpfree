@@ -6,10 +6,23 @@ def get_env_variable(key: str) -> str:
     """Get environment variable from either secrets or .env"""
     # Try getting from Streamlit secrets first
     try:
-        return st.secrets[key]
+        value = st.secrets[key]
+        if value:
+            return value
     except (KeyError, FileNotFoundError):
-        # Fall back to environment variable
-        return os.getenv(key)
+        pass
+    
+    # Fall back to environment variable
+    value = os.getenv(key)
+    if value:
+        return value
+    
+    # Debug output
+    st.write(f"Failed to get {key} from both secrets and env vars")
+    st.write(f"Available secrets: {list(st.secrets.keys()) if hasattr(st, 'secrets') else 'No secrets'}")
+    st.write(f"Available env vars: {[k for k in os.environ.keys() if k in required_vars]}")
+    
+    return None
 
 def check_environment():
     """Check and validate environment variables"""
