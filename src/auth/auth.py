@@ -10,7 +10,8 @@ USERS = {
     "meg": "canigetthisdog",
     "aimee": "ipromisehegrowsonyou",
     "cami": "*eyerollatjon*",
-    "chloe": "iliketurtles"
+    "chloe": "iliketurtles",
+    "ryan": "getmarriedmovetoboisebehappy"
 }
 
 def init_auth():

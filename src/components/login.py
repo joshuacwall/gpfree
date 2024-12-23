@@ -30,9 +30,24 @@ def render_login_page():
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             
+            # Add disclaimer and checkbox
+            st.markdown("""
+                <div style='margin: 20px 0; padding: 15px; background-color: #1E1E1E; border-radius: 5px;'>
+                    <p style='font-size: 0.9em; color: #FAFAFA;'>
+                        <strong>⚠️ Disclaimer:</strong> Messages are logged for maintenance purposes. 
+                        Additionally, LLM service providers may separately log and store conversations. 
+                        By checking the box below, you acknowledge and accept these data handling practices.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            accept_terms = st.checkbox("I understand and accept the data handling practices")
+            
             submit = st.form_submit_button("Login")
             if submit:
-                if login(username, password):
+                if not accept_terms:
+                    st.error("Please accept the data handling practices to continue")
+                elif login(username, password):
                     st.success("Login successful!")
                     st.rerun()
                 else:
@@ -75,6 +90,15 @@ def render_login_page():
                 /* Success/Error messages */
                 .stAlert {
                     margin-top: 20px;
+                }
+                
+                /* Checkbox styling */
+                .stCheckbox {
+                    margin: 15px 0;
+                }
+                
+                .stCheckbox label {
+                    color: #FAFAFA !important;
                 }
             </style>
             """,
