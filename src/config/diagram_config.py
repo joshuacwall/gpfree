@@ -1,71 +1,105 @@
 from typing import Dict
-import inspect
-import graphviz
-from agents.react_agent import ReactAgent
-from agents.react_human_agent import ReactHumanAgent
-from agents.advanced_react_agent import AdvancedReactAgent
-from agents.plain_agent import PlainAgent
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from typing import Annotated, TypedDict, List
+from typing_extensions import TypedDict
 
-def get_agent_graph(agent_type: str) -> tuple[str, graphviz.Digraph]:
+class AgentState(TypedDict):
+    messages: Annotated[List[str], add_messages]
+
+def get_agent_graph(agent_type: str) -> tuple[str, bytes]:
     """Dynamically create and return agent graph and description"""
-    agent_classes = {
-        "react": ReactAgent,
-        "react_human": ReactHumanAgent,
-        "advanced_react": AdvancedReactAgent,
-        "plain": PlainAgent
+    descriptions = {
+        "plain": """
+        A simple agent that directly uses the LLM without any tools or complex workflows.
+        Just takes user input, processes with system prompt, and returns response.
+        """,
+        "react": """
+        A ReAct agent that follows a simple workflow:
+        1. Agent receives input and determines if tools are needed
+        2. If tools are needed, executes them and returns results
+        3. Process continues until completion
+        """,
+        "react_human": """
+        A ReAct agent with human-in-the-loop capabilities that:
+        1. Agent determines if tools are needed
+        2. If tools needed, waits for human approval
+        3. Upon approval, executes tools and returns to agent
+        4. Upon rejection, returns to agent for alternative approach
+        """,
+        "advanced_react": """
+        A ReAct agent that uses two LLMs:
+        1. Router LLM determines whether to use tools or generate final response
+        2. If tools are needed, executes them and returns to router
+        3. If final response needed, passes to Response LLM for detailed answer
+        """
     }
     
-    if agent_type not in agent_classes:
+    if agent_type not in descriptions:
         raise ValueError(f"Unknown agent type: {agent_type}")
-        
-    # Get agent class and docstring
-    agent_class = agent_classes[agent_type]
-    description = inspect.getdoc(agent_class) or "No description available"
     
     # Create graph
-    dot = graphviz.Digraph(comment=agent_type)
-    dot.attr(rankdir='TB')  # Top to Bottom direction
-    
-    # Define node styles
-    dot.attr('node', shape='box', style='rounded,filled', fontname='Arial')
-    
-    # Add start node
-    dot.node('start', 'START', fillcolor='#90EE90', fontcolor='black')  # Light green
+    workflow = StateGraph(AgentState)
     
     # Add nodes and edges based on agent type
     if agent_type == "plain":
-        dot.node('agent', 'Agent', fillcolor='#ADD8E6')  # Light blue
-        dot.node('end', 'END', fillcolor='#FFB6C1')  # Light pink
-        dot.edge('start', 'agent')
-        dot.edge('agent', 'end')
+        workflow.add_node("agent", lambda x: x)
+        workflow.set_entry_point("agent")
+        workflow.add_edge("agent", END)
+        
     elif agent_type == "react":
-        dot.node('agent', 'Agent', fillcolor='#ADD8E6')
-        dot.node('tools', 'Tools', fillcolor='#DDA0DD')  # Light purple
-        dot.node('end', 'END', fillcolor='#FFB6C1')
-        dot.edge('start', 'agent')
-        dot.edge('agent', 'tools')
-        dot.edge('tools', 'agent')
-        dot.edge('agent', 'end', 'complete')
+        workflow.add_node("agent", lambda x: x)
+        workflow.add_node("tools", lambda x: x)
+        workflow.set_entry_point("agent")
+        workflow.add_conditional_edges(
+            "agent",
+            lambda x: "complete" if x else "continue",
+            {
+                "complete": END,
+                "continue": "tools"
+            }
+        )
+        workflow.add_edge("tools", "agent")
+        
     elif agent_type == "react_human":
-        dot.node('agent', 'Agent', fillcolor='#ADD8E6')
-        dot.node('human', 'Human\nApproval', fillcolor='#F0E68C')  # Khaki
-        dot.node('tools', 'Tools', fillcolor='#DDA0DD')
-        dot.node('end', 'END', fillcolor='#FFB6C1')
-        dot.edge('start', 'agent')
-        dot.edge('agent', 'human')
-        dot.edge('human', 'tools', 'approved')
-        dot.edge('tools', 'agent')
-        dot.edge('human', 'agent', 'rejected')
-        dot.edge('agent', 'end', 'complete')
+        workflow.add_node("agent", lambda x: x)
+        workflow.add_node("human_approval", lambda x: x)
+        workflow.add_node("tools", lambda x: x)
+        workflow.set_entry_point("agent")
+        workflow.add_conditional_edges(
+            "agent",
+            lambda x: "complete" if x else "approval",
+            {
+                "complete": END,
+                "approval": "human_approval"
+            }
+        )
+        workflow.add_conditional_edges(
+            "human_approval",
+            lambda x: "approved" if x else "rejected",
+            {
+                "approved": "tools",
+                "rejected": "agent"
+            }
+        )
+        workflow.add_edge("tools", "agent")
+        
     elif agent_type == "advanced_react":
-        dot.node('router', 'Router', fillcolor='#ADD8E6')
-        dot.node('tools', 'Tools', fillcolor='#DDA0DD')
-        dot.node('response', 'Response', fillcolor='#98FB98')  # Pale green
-        dot.node('end', 'END', fillcolor='#FFB6C1')
-        dot.edge('start', 'router')
-        dot.edge('router', 'tools', 'continue')
-        dot.edge('tools', 'router')
-        dot.edge('router', 'response', 'respond')
-        dot.edge('response', 'end')
+        workflow.add_node("router", lambda x: x)
+        workflow.add_node("tools", lambda x: x)
+        workflow.add_node("response", lambda x: x)
+        workflow.set_entry_point("router")
+        workflow.add_conditional_edges(
+            "router",
+            lambda x: "continue" if x else "respond",
+            {
+                "continue": "tools",
+                "respond": "response"
+            }
+        )
+        workflow.add_edge("tools", "router")
+        workflow.add_edge("response", END)
     
-    return description, dot
+    # Generate PNG using default LangGraph visualization
+    graph = workflow.compile().get_graph()
+    return descriptions[agent_type], graph.draw_mermaid_png()

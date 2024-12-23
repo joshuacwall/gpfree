@@ -150,16 +150,17 @@ def render_architecture_diagrams():
             help="View the workflow diagram for each agent type"
         )
         
-        description, graph = get_agent_graph(agent_type)
+        description, graph_png = get_agent_graph(agent_type)
         st.markdown(f"**{agent_type.title()} Agent**")
         st.markdown(description)
-        st.image(graph.pipe(format='png'))
+        st.image(graph_png)
         
     except Exception as e:
         st.error(f"""
         Error generating diagram: {str(e)}
         Please make sure you have graphviz installed:
         ```bash
-        pip install graphviz
+        sudo apt-get install graphviz  # For Ubuntu/Debian
+        brew install graphviz          # For macOS
         ```
         """)
